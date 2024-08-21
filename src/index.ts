@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import pool from './database'; // Uvezi konekciju
+import pool from './database'; // Uvezi konekciju sa bazom podataka
 import { RowDataPacket } from 'mysql2'; // Dodaj uvoz RowDataPacket
+import accountsRouter from './routes/accounts'; // Uvezi ruter za naloge
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -20,15 +21,15 @@ app.get('/', (req, res) => {
 
 // Ruta za registraciju korisnika
 app.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, currency } = req.body;
 
-  if (!username || !email || !password) {
+  if (!username || !email || !password || !currency) {
     return res.status(400).send('All fields are required.');
   }
 
   try {
     // Proveri da li korisnik već postoji
-    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM Users WHERE username = ?', [username]);
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM users WHERE username = ?', [username]);
 
     if (rows.length > 0) {
       return res.status(400).send('Username already taken.');
@@ -38,7 +39,7 @@ app.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Kreiraj novog korisnika
-    await pool.query('INSERT INTO Users (username, email, password) VALUES (?, ?, ?)', [username, email, hashedPassword]);
+    await pool.query('INSERT INTO users (username, email, password, currency) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, currency]);
 
     res.status(201).send('User registered successfully.');
   } catch (err) {
@@ -57,7 +58,7 @@ app.post('/login', async (req, res) => {
 
   try {
     // Proveri da li korisnik postoji
-    const [users] = await pool.query<RowDataPacket[]>('SELECT * FROM Users WHERE username = ?', [username]);
+    const [users] = await pool.query<RowDataPacket[]>('SELECT * FROM users WHERE username = ?', [username]);
 
     if (users.length === 0) {
       return res.status(401).send('Invalid credentials.');
@@ -82,16 +83,32 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Ruta za dobijanje naloga (primer)
-app.get('/api/accounts', async (req, res) => {
+// Ruta za dobijanje svih transakcija
+app.get('/api/transactions', async (req, res) => {
   try {
-    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM Accounts');
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM transactions');
     res.json(rows);
   } catch (err) {
-    console.error('Error fetching accounts:', err);
+    console.error('Error fetching transactions:', err);
     res.status(500).send('Server error');
   }
 });
+
+// Ruta za dobijanje transakcija za određenog korisnika
+app.get('/api/transactions/:userId', async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM transactions WHERE user_id = ?', [userId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching user transactions:', err);
+    res.status(500).send('Server error');
+  }
+});
+
+// Koristi ruter za naloge (accountsRouter)
+app.use('/api', accountsRouter);
 
 // Pokretanje servera
 app.listen(port, () => {

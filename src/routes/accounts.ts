@@ -1,14 +1,18 @@
-// src/routes/accounts.ts
-
 import express from 'express';
-import { getAccounts, createAccount } from '../controllers/accountsController';
+import { getAccounts, createAccount, register, login } from '../controllers/accountsController';
 
 const router = express.Router();
 
-// Ruta za dobijanje svih naloga
-router.get('/accounts', getAccounts);
+// Ruta za registraciju korisnika
+router.post('/register', register);
 
-// Ruta za kreiranje novog naloga
-router.post('/accounts', createAccount);
+// Ruta za prijavu korisnika
+router.post('/login', login);
+
+// Ruta za dobijanje svih transakcija
+router.get('/transactions', getAccounts);
+
+// Ruta za kreiranje nove transakcije
+router.post('/transactions', createAccount);
 
 export default router;
