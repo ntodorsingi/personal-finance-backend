@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAccounts, createAccount, register, login } from '../controllers/accountsController';
+import { register, login, getAccounts, createAccount, getUserStatus } from '../controllers/accountsController';
 
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.get('/transactions', getAccounts);
 
 // Ruta za kreiranje nove transakcije
 router.post('/transactions', createAccount);
+
+// Ruta za dobijanje stanja korisnika
+router.get('/user-status', getUserStatus);
 
 export default router;

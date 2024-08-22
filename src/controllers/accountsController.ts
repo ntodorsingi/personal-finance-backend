@@ -4,8 +4,10 @@ import jwt from 'jsonwebtoken';
 import pool from '../database';
 import { RowDataPacket } from 'mysql2';
 
-const JWT_SECRET = 'your_jwt_secret_key';
+// Tajni ključ za JWT
+const JWT_SECRET = 'your_jwt_secret_key'; // Postavite vaš tajni ključ ovde
 
+// Funkcija za registraciju korisnika
 export const register = async (req: Request, res: Response) => {
   const { username, email, password, currency } = req.body;
 
@@ -14,8 +16,8 @@ export const register = async (req: Request, res: Response) => {
   }
 
   try {
-    const [existingUserRows] = await pool.query('SELECT * FROM Users WHERE username = ?', [username]);
-    const existingUser = existingUserRows as RowDataPacket[];
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM Users WHERE username = ?', [username]);
+    const existingUser = rows;
 
     if (existingUser.length > 0) {
       return res.status(400).json({ message: 'Username already exists' });
@@ -32,6 +34,7 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
+// Funkcija za prijavu korisnika
 export const login = async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
@@ -40,8 +43,8 @@ export const login = async (req: Request, res: Response) => {
   }
 
   try {
-    const [userRows] = await pool.query('SELECT * FROM Users WHERE username = ?', [username]);
-    const users = userRows as RowDataPacket[];
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM Users WHERE username = ?', [username]);
+    const users = rows;
 
     if (users.length === 0) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -64,9 +67,10 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// Funkcija za dobijanje svih transakcija
 export const getAccounts = async (req: Request, res: Response) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM Transactions');
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM Transactions');
     res.json(rows);
   } catch (error) {
     console.error('Error fetching transactions:', error);
@@ -74,6 +78,7 @@ export const getAccounts = async (req: Request, res: Response) => {
   }
 };
 
+// Funkcija za kreiranje nove transakcije
 export const createAccount = async (req: Request, res: Response) => {
   const { userId, category, amount, type, date, description } = req.body;
 
@@ -89,6 +94,22 @@ export const createAccount = async (req: Request, res: Response) => {
     res.status(201).json({ message: 'Transaction created successfully' });
   } catch (error) {
     console.error('Error creating transaction:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Funkcija za dobijanje stanja korisnika
+export const getUserStatus = async (req: Request, res: Response) => {
+  const userId = (req as any).userId; // Pretpostavljamo da se userId dobija iz JWT tokena
+
+  try {
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT balance FROM Users WHERE id = ?', [userId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Error fetching user status:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

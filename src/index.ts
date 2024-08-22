@@ -1,23 +1,15 @@
 import express from 'express';
 import cors from 'cors';
-import accountsRouter from './routes/accounts'; // Uvezi ruter za naloge
+import bodyParser from 'body-parser';
+import accountsRoutes from './routes/accounts';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = 3000;
 
-// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
+app.use('/api', accountsRoutes);
 
-// Ruta za testiranje
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
-});
-
-// Koristi ruter za naloge (accountsRouter)
-app.use('/api', accountsRouter);
-
-// Pokretanje servera
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
